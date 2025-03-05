@@ -1,6 +1,7 @@
 import streamlit as st
 import pdfplumber
-from transformers import AutoModelForSequenceClassification, AutoTokenizer, pipeline, PegasusForConditionalGeneration, PegasusTokenizer
+from transformers import AutoModelForSequenceClassification, AutoTokenizer, pipeline, PegasusForConditionalGeneration, \
+    PegasusTokenizer
 import spacy
 
 MODEL_NAME = "law-ai/InLegalBERT"
@@ -14,6 +15,7 @@ tokenizer_explain = PegasusTokenizer.from_pretrained(EXPLAIN_MODEL)
 model_explain = PegasusForConditionalGeneration.from_pretrained(EXPLAIN_MODEL)
 
 spacy_model = spacy.load("en_core_web_sm")
+x
 
 def extract_text_from_pdf(pdf_file):
     text = ""
@@ -24,33 +26,39 @@ def extract_text_from_pdf(pdf_file):
                 text += page_text + "\n"
     return text.strip() if text else "No text found in the PDF."
 
+
 def summarize_contract(text):
     inputs = tokenizer_explain(text, return_tensors="pt", max_length=1024, truncation=True)
     summary_ids = model_explain.generate(inputs["input_ids"], max_length=256, num_beams=5, early_stopping=True)
     return tokenizer_explain.decode(summary_ids[0], skip_special_tokens=True)
 
+
 def extract_dates(text):
     doc = spacy_model(text)
     return [ent.text for ent in doc.ents if ent.label_ == "DATE"] or ["No dates found."]
 
+
 def check_compliance(contract_text):
     classification = nlp_legalbert(contract_text)
-    
+
     if classification[0]['label'] == 'Compliant':
         return "✅ This contract is compliant with Indian laws."
-    
+
     issue_prompt = f"Identify compliance issues in this contract under Indian laws: {contract_text}"
     correction_prompt = f"Suggest legal corrections and missing clauses for this contract under Indian laws: {contract_text}"
-    
+
     inputs_issue = tokenizer_explain(issue_prompt, return_tensors="pt", max_length=1024, truncation=True)
-    summary_ids_issue = model_explain.generate(inputs_issue["input_ids"], max_length=256, num_beams=5, early_stopping=True)
+    summary_ids_issue = model_explain.generate(inputs_issue["input_ids"], max_length=256, num_beams=5,
+                                               early_stopping=True)
     issue_explanation = tokenizer_explain.decode(summary_ids_issue[0], skip_special_tokens=True)
-    
+
     inputs_correction = tokenizer_explain(correction_prompt, return_tensors="pt", max_length=1024, truncation=True)
-    summary_ids_correction = model_explain.generate(inputs_correction["input_ids"], max_length=256, num_beams=5, early_stopping=True)
+    summary_ids_correction = model_explain.generate(inputs_correction["input_ids"], max_length=256, num_beams=5,
+                                                    early_stopping=True)
     correction_suggestion = tokenizer_explain.decode(summary_ids_correction[0], skip_special_tokens=True)
 
     return f"❌ **Non-Compliant**\n\n📌 **Issues:** {issue_explanation}\n\n📜 **Legal Corrections:** {correction_suggestion}"
+
 
 st.title("📜 Indian Legal AI Assistant")
 st.sidebar.header("Upload a Contract PDF")
