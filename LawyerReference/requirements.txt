@@ -1,4 +1,7 @@
 streamlit
-requests
+httpx
 beautifulsoup4
+asyncio
+torch  
 ollama
+lxml
